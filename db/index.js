@@ -9,10 +9,10 @@ async function getAllUsers() {
   );
   return rows;
 }
-
+//------------------------------------------------------------------
 async function createUser({ username, password, name, location }) {
   try {
-    const { rows } = await client.query(
+    const { rows: [user] } = await client.query(
       `
         INSERT INTO users(username, password, name, location) 
         VALUES ($1, $2, $3, $4)
@@ -22,12 +22,12 @@ async function createUser({ username, password, name, location }) {
       [username, password, name, location]
     );
 
-    return rows;
+    return user;
   } catch (error) {
     throw error;
   }
 }
-
+//-------------------------------------------------
 async function updateUser(id, fields = {}) {
   const setString = Object.keys(fields)
     .map((key, index) => `"${key}"=$${index + 1}`)
@@ -56,6 +56,96 @@ async function updateUser(id, fields = {}) {
     throw error;
   }
 }
+//------------------------------------
+async function createPost({
+    authorId,
+    title,
+    content
+}){
+    try {
+        const { rows: [post] } = await client.query(
+            `
+              INSERT INTO posts(authorId, title, content) 
+              VALUES ($1, $2, $3)
+              ON CONFLICT (authorId) DO NOTHING
+              RETURNING *;
+              `,
+            [username, password, name, location]
+          );
+
+          return post;
+    } catch (error) {
+        throw error;
+    }
+}
+//------------------------------------
+//check back on this function if there is errors
+//redo 
+//help ticket
+async function updatePost(id, {
+    title,
+    content,
+    active
+}) {
+    const setString = Object.keys(fields)
+      .map((key, index) => `"${key}"=$${index + 1}`)
+      .join(", ");
+  
+    if (setString.length === 0) {
+      return;
+    }
+  
+    try {
+      const {  rows: [post] } = await client.query( `
+      UPDATE posts
+      SET ${setString}
+      RETURNING *;
+      `, Object.values(fields)
+      );
+      //* dependency array??...
+  
+      return post;
+    } catch (error) {
+      throw error;
+    }
+  }
+//===================================
+async function getAllPosts(){
+    try {
+        const { rows } = await client.query(
+            `SELECT id, authorId, title, content, active
+                FROM posts;`)
+    
+    } catch (error) {
+        throw error;
+    }
+}
+//---------------------------
+async function getPostsByUser(userId){
+    try {
+        const { rows } = await client.query(`
+        SELECT * FROM posts
+        WHERE "authorId"=${ userId };
+        `)
+
+        return rows;
+    } catch (error) {
+        throw error;
+    }
+}
+
+async function getUserById(userId){
+    const {rows: [user]} = client.query(`
+    `)
+   try {
+    
+   } catch (error) {
+     throw error;
+     console.log('catch error = null in getUserById')
+   }
+
+}
+
 module.exports = {
   client,
   getAllUsers,
