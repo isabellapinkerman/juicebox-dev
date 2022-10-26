@@ -1,21 +1,34 @@
-const { client,
-     getAllUsers, 
-     createUser } = require("./index");
+const { client, getAllUsers, createUser, updateUser } = require("./index");
 
-async function createInitialUsers(){
+async function createInitialUsers() {
+  try {
+    console.log("Starting to create users...");
 
-    try {
-        console.log("Starting to create users...");
+    await createUser({
+      username: "albert",
+      password: "bertie99",
+      name: "Bert",
+      location: "London",
+    });
+    await createUser({
+      username: "sandra",
+      password: "2sandy4me",
+      name: "Kim",
+      location: "Detroit",
+    });
+    await createUser({
+      username: "glamgal",
+      password: "soglam",
+      name: "Becca",
+      location: "here",
+    });
 
-         console.log(albert);
-
-        console.log("Finished creating users!");
-    } catch (error) {
-        console.error("Error creating users!");
-        throw error;
-    }
+    console.log("Finished creating users!");
+  } catch (error) {
+    console.error("Error creating users!");
+    throw error;
+  }
 }
-
 
 async function dropTables() {
   try {
@@ -39,7 +52,10 @@ async function createTables() {
     CREATE TABLE users (
         id SERIAL PRIMARY KEY,
         username VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(225) NOT NULL
+        password VARCHAR(225) NOT NULL,
+        name VARCHAR(225) NOT NULL,
+        location VARCHAR(225) NOT NULL,
+        active BOOLEAN DEFAULT true
     );
        `);
     console.log("Finished building tables!");
@@ -65,8 +81,16 @@ async function testDB() {
   try {
     console.log("Starting to test database...");
 
+    console.log("Calling getAllUsers");
     const users = await getAllUsers();
-    console.log("getAllUsers:", users);
+    console.log("Result:", users);
+
+    console.log("Calling updateUser on users[0]");
+    const updateUserResult = await updateUser(users[0].id, {
+      name: "Newname Sogood",
+      location: "Lesterville, KY",
+    });
+    console.log("Result:", updateUserResult);
 
     console.log("Finished database tests!");
   } catch (error) {
