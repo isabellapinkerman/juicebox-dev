@@ -45,6 +45,7 @@ async function createInitialPosts() {
   try {
     const [albert, sandra, glamgal] = await getAllUsers();
 
+    console.log("Starting to create posts...")
     await createPost({
       authorId: albert.id,
       title: "First Post",
@@ -115,22 +116,22 @@ async function createTags(tagList) {
   }
 
   // need something like: $1), ($2), ($3
-  const insertValues = tagList.map(($1, index) => `$${index + 1}`).join("), (");
+  const insertValues = tagList.map((_, index) => `$${index + 1}`).join("), (");
 
   // need something like $1, $2, $3
-  const selectValues = tagList.map(($1, index) => `$${index + 1}`).join(", ");
+  const selectValues = tagList.map((_, index) => `$${index + 1}`).join(", ");
 
   try {
     await client.query(`
     INSERT INTO tags(name)
     VALUES (${insertValues})
     ON CONFLICT (name) DO NOTHING;
-    `);
+    `, tagList);
 
     const { rows } = await client.query(`
     SELECT * FROM tags
     WHERE name
-    IN (${selectValues})`);
+    IN (${selectValues})`, tagList);
 
     return rows;
   } catch (error) {
@@ -178,8 +179,9 @@ async function createTables() {
       name VARCHAR(255) UNIQUE NOT NULL
     );
     CREATE TABLE post_tags (
-      "postId" INTEGER REFERENCES posts(id) UNIQUE,
-      "tagId" INTEGER REFERENCES tags(id) UNIQUE
+      "postId" INTEGER REFERENCES posts(id),
+      "tagId" INTEGER REFERENCES tags(id),
+      UNIQUE ("postId", "tagId")
       );
       
        `);

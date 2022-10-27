@@ -68,10 +68,11 @@ async function createPost({ authorId, title, content }) {
               VALUES ($1, $2, $3)
               RETURNING *;
               `,
-      [authorId, title, content]
-    );
+      [authorId, title, content]);
 
-    return post;
+      const tagList = await createTags(tags);
+
+      return await addTagsToPost(post.id, tagList)
   } catch (error) {
     throw error;
   }
@@ -111,12 +112,16 @@ async function updatePost(id, fields = {}) {
 //authorId in ""?
 async function getAllPosts() {
   try {
-    const { rows } = await client.query(`
-      SELECT *
+    const { rows: postIds } = await client.query(`
+      SELECT id
       FROM posts;
       `);
 
-    return rows;
+      const posts = await Promise.all(postIds.map(
+        post => getPostById( post.id )
+      ));
+
+    return posts;
   } catch (error) {
     throw error;
   }
@@ -124,13 +129,16 @@ async function getAllPosts() {
 //---------------------------
 async function getPostsByUser(userId) {
   try {
-    const { rows } = await client.query(`
-        SELECT * 
+    const { rows: postIds } = await client.query(`
+        SELECT id
         FROM posts
         WHERE "authorId"=${userId};
         `);
 
-    return rows;
+        const posts = await Promise.all(postIds.map(
+          post => getPostById( post.id )
+        ))
+    return posts;
   } catch (error) {
     throw error;
   }
