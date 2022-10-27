@@ -1,4 +1,14 @@
-const { client, getAllUsers, createUser, updateUser, getAllPosts, updatePost, getUserById, createPost} = require("./index");
+const {
+  client,
+  getAllUsers,
+  createUser,
+  updateUser,
+  getAllPosts,
+  updatePost,
+  getUserById,
+  createPost,
+  getPostsByUser,
+} = require("./index");
 
 async function createInitialUsers() {
   try {
@@ -30,22 +40,32 @@ async function createInitialUsers() {
   }
 }
 
-async function createInitialPosts(){
+async function createInitialPosts() {
   try {
     const [albert, sandra, glamgal] = await getAllUsers();
 
     await createPost({
       authorId: albert.id,
       title: "First Post",
-      content: "This is my first post. I hope I love writing blogs as much as I love writing them."
+      content:
+        "This is my first post. I hope I love writing blogs as much as I love writing them.",
     });
-
+    await createPost({
+      authorId: sandra.id,
+      title: "How does this work?",
+      content: "Seriously, does this even do anything?",
+    });
+    await createPost({
+      authorId: glamgal.id,
+      title: "Living the Glam Life",
+      content: "Do you even? I swear that half of you are posing.",
+    });
+    console.log("Finished creating posts!");
   } catch (error) {
+    console.log("Error creating posts!");
     throw error;
   }
 }
-
-
 
 async function dropTables() {
   try {
@@ -75,15 +95,21 @@ async function createTables() {
         location VARCHAR(225) NOT NULL,
         active BOOLEAN DEFAULT true
     );
-       `);
-    await client.query(`
        CREATE TABLE posts (
         id SERIAL PRIMARY KEY,
         "authorId" INTEGER REFERENCES users(id) NOT NULL,
         title VARCHAR(255) NOT NULL,
         content TEXT NOT NULL,
         active BOOLEAN DEFAULT true
-       )
+       );
+        CREATE TABLE tags (
+          id SERIAL PRIMARY KEY
+          name VARCHAR(255) UNIQUE NOT NULL
+        );
+          CREATE TABLE post_tags (
+            "postId" INTEGER REFERENCES post(id) UNIQUE
+            "tagId" INTEGER REFERENCES tags(id) UNIQUE
+          );
        `);
     console.log("Finished building tables!");
   } catch (error) {
@@ -101,6 +127,7 @@ async function rebuildDB() {
     await createInitialUsers();
     await createInitialPosts();
   } catch (error) {
+    console.log("Error during rebuildDB");
     throw error;
   }
 }
@@ -120,20 +147,20 @@ async function testDB() {
     });
     console.log("Result:", updateUserResult);
 
-    console.log("Calling getAllPosts")
+    console.log("Calling getAllPosts");
     const posts = await getAllPosts();
     console.log("Result: of getAllPosts", posts);
 
     console.log("Calling updatePost on posts[0]");
     const updatePostResult = await updatePost(posts[0].id, {
       title: "New Title",
-      content: "Updated content"
-    })
+      content: "Updated content",
+    });
     console.log("Result:", updatePostResult);
 
-    console.log("Calling getUserById with 1")
+    console.log("Calling getUserById with 1");
     const albert = await getUserById(1);
-    console.log("Result:", albert)
+    console.log("Result:", albert);
 
     console.log("Finished database tests!");
   } catch (error) {

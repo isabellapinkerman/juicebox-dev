@@ -51,7 +51,6 @@ async function updateUser(id, fields = {}) {
     `,
       Object.values(fields)
     );
-    //* dependency array??...
 
     return user;
   } catch (error) {
@@ -82,7 +81,6 @@ async function createPost({ authorId, title, content }) {
 //redo
 //help ticket
 async function updatePost(id, fields = {}) {
-
   const setString = Object.keys(fields)
     .map((key, index) => `"${key}"=$${index + 1}`)
     .join(", ");
@@ -92,16 +90,17 @@ async function updatePost(id, fields = {}) {
   }
 
   try {
-    const {  rows: [post], } = await client.query(
+    const {
+      rows: [post],
+    } = await client.query(
       `
       UPDATE posts
       SET ${setString}
-      WHERE id=${ id }
+      WHERE id=${id}
       RETURNING *;
       `,
       Object.values(fields)
     );
-    //* dependency array??...
 
     return post;
   } catch (error) {
@@ -112,10 +111,10 @@ async function updatePost(id, fields = {}) {
 //authorId in ""?
 async function getAllPosts() {
   try {
-    const { rows } = await client.query(
-      `SELECT id, "authorId", title, content, active
-                FROM posts;`
-    );
+    const { rows } = await client.query(`
+      SELECT *
+      FROM posts;
+      `);
 
     return rows;
   } catch (error) {
@@ -126,7 +125,8 @@ async function getAllPosts() {
 async function getPostsByUser(userId) {
   try {
     const { rows } = await client.query(`
-        SELECT * FROM posts
+        SELECT * 
+        FROM posts
         WHERE "authorId"=${userId};
         `);
 
@@ -142,7 +142,8 @@ async function getUserById(userId) {
     const {
       rows: [user],
     } = client.query(`
-        SELECT * FROM users
+        SELECT id, username, name, location, active
+        FROM users
         WHERE "id"=${userId};
     `);
 
@@ -150,9 +151,8 @@ async function getUserById(userId) {
       return null;
     }
 
-    const allPosts = await getPostsByUser(userId);
+    user.posts = await getPostsByUser(userId);
 
-    user.posts = allPosts;
     return user;
   } catch (error) {
     throw error;
@@ -168,5 +168,6 @@ module.exports = {
   getAllPosts,
   updatePost,
   getUserById,
-  createPost
+  createPost,
+  getPostsByUser,
 };
