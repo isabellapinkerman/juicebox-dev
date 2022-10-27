@@ -65,12 +65,11 @@ async function createPost({ authorId, title, content }) {
       rows: [post],
     } = await client.query(
       `
-              INSERT INTO posts(authorId, title, content) 
+              INSERT INTO posts("authorId", title, content) 
               VALUES ($1, $2, $3)
-              ON CONFLICT (authorId) DO NOTHING
               RETURNING *;
               `,
-      [username, password, name, location]
+      [authorId, title, content]
     );
 
     return post;
@@ -82,7 +81,8 @@ async function createPost({ authorId, title, content }) {
 //check back on this function if there is errors
 //redo
 //help ticket
-async function updatePost(id, { title, content, active }) {
+async function updatePost(id, fields = {}) {
+
   const setString = Object.keys(fields)
     .map((key, index) => `"${key}"=$${index + 1}`)
     .join(", ");
@@ -92,12 +92,11 @@ async function updatePost(id, { title, content, active }) {
   }
 
   try {
-    const {
-      rows: [post],
-    } = await client.query(
+    const {  rows: [post], } = await client.query(
       `
       UPDATE posts
       SET ${setString}
+      WHERE id=${ id }
       RETURNING *;
       `,
       Object.values(fields)
@@ -110,12 +109,15 @@ async function updatePost(id, { title, content, active }) {
   }
 }
 //===================================
+//authorId in ""?
 async function getAllPosts() {
   try {
     const { rows } = await client.query(
-      `SELECT id, authorId, title, content, active
+      `SELECT id, "authorId", title, content, active
                 FROM posts;`
     );
+
+    return rows;
   } catch (error) {
     throw error;
   }
@@ -157,11 +159,14 @@ async function getUserById(userId) {
     console.log("catch error = null in getUserById");
   }
 }
-getUserById();
 
 module.exports = {
   client,
   getAllUsers,
   createUser,
   updateUser,
+  getAllPosts,
+  updatePost,
+  getUserById,
+  createPost
 };
