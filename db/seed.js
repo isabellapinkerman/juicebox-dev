@@ -72,12 +72,45 @@ async function dropTables() {
     console.log("Starting to drop tables...");
 
     await client.query(`
+    DROP TABLE IF EXISTS post_tags;
+    DROP TABLE IF EXISTS tags;
     DROP TABLE IF EXISTS posts;
     DROP TABLE IF EXISTS users;
        `);
     console.log("Finished dropping tables!");
   } catch (error) {
     console.error("Error dropping tables!");
+    throw error;
+  }
+}
+
+async function createTags(tagList) {
+  if (tagList.length === 0) { 
+    return; 
+  }
+
+  // need something like: $1), ($2), ($3 
+  const insertValues = tagList.map(
+    (_, index) => `$${index + 1}`).join('), (');
+
+  // need something like $1, $2, $3
+  const selectValues = tagList.map(
+    (_, index) => `$${index + 1}`).join(', ');
+
+  try {
+    await client.query(`
+    INSERT INTO tags(name)
+    VALUES (${ insertValues })
+    ON CONFLICT (name) DO NOTHING;
+    `)
+
+    const { rows } =await client.query(`
+    SELECT * FROM tags
+    WHERE name
+    IN (${ selectValues })`)
+
+    return rows;
+  } catch (error) {
     throw error;
   }
 }
@@ -95,21 +128,22 @@ async function createTables() {
         location VARCHAR(225) NOT NULL,
         active BOOLEAN DEFAULT true
     );
-       CREATE TABLE posts (
-        id SERIAL PRIMARY KEY,
-        "authorId" INTEGER REFERENCES users(id) NOT NULL,
-        title VARCHAR(255) NOT NULL,
-        content TEXT NOT NULL,
-        active BOOLEAN DEFAULT true
-       );
-        CREATE TABLE tags (
-          id SERIAL PRIMARY KEY
-          name VARCHAR(255) UNIQUE NOT NULL
-        );
-          CREATE TABLE post_tags (
-            "postId" INTEGER REFERENCES post(id) UNIQUE
-            "tagId" INTEGER REFERENCES tags(id) UNIQUE
-          );
+    CREATE TABLE posts (
+      id SERIAL PRIMARY KEY,
+      "authorId" INTEGER REFERENCES users(id) NOT NULL,
+      title VARCHAR(255) NOT NULL,
+      content TEXT NOT NULL,
+      active BOOLEAN DEFAULT true
+     );
+     CREATE TABLE tags (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) UNIQUE NOT NULL
+    );
+    CREATE TABLE post_tags (
+      "postId" INTEGER REFERENCES posts(id) UNIQUE,
+      "tagId" INTEGER REFERENCES tags(id) UNIQUE
+      );
+      
        `);
     console.log("Finished building tables!");
   } catch (error) {
