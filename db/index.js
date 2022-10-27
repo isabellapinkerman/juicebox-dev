@@ -143,7 +143,14 @@ async function getUserById(userId) {
         SELECT * FROM users
         WHERE "id"=${userId};
     `);
-    getPostsByUser(user);
+
+    if (!user) {
+      return null;
+    }
+
+    const allPosts = await getPostsByUser(userId);
+
+    user.posts = allPosts;
     return user;
   } catch (error) {
     throw error;
