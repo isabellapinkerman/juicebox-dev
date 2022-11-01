@@ -2,10 +2,18 @@ const jwt = require("jsonwebtoken");
 const express = require("express");
 const usersRouter = express.Router();
 const { JWT_SECRET } = process.env;
+const { requireUser, requireActiveUser } = require("./utils");
 
-const { getAllUsers, getUserByUsername, createUser } = require("../db");
+const {
+  getAllUsers,
+  getUserByUsername,
+  createUser,
+  getUserById,
+  updateUser,
+} = require("../db");
 
 console.log();
+requireActiveUser();
 usersRouter.use((req, res, next) => {
   console.log("A request is being made to /users");
 
@@ -46,6 +54,32 @@ usersRouter.post("/login", async (req, res, next) => {
   } catch (error) {
     console.log(error);
     next(error);
+  }
+});
+
+usersRouter.delete("/:userId", requireUser, async (req, res, next) => {
+  try {
+    const user = await getUserById(req.params.userId);
+
+    if (user && user.id === req.user.id) {
+      const updatedUser = await updateUser(user.id, { active: false });
+
+      res.send({ user: updatedUser });
+    } else {
+      next(
+        user
+          ? {
+              name: "UnauthorizedUserError",
+              message: "You cannot delete a user that is not yours",
+            }
+          : {
+              name: "UserNotFoundError",
+              message: "That user does not exist",
+            }
+      );
+    }
+  } catch ({ name, message }) {
+    next({ name, message });
   }
 });
 
