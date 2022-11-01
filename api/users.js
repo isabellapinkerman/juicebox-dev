@@ -12,8 +12,6 @@ const {
   updateUser,
 } = require("../db");
 
-// console.log();
-// requireActiveUser();
 usersRouter.use((req, res, next) => {
   console.log("A request is being made to /users");
 
@@ -57,43 +55,65 @@ usersRouter.post("/login", async (req, res, next) => {
   }
 });
 
-usersRouter.patch("/:userId", requireUser, async (req, res, next) => {
-  const { userId } = req.params;
-  console.log(req)
+usersRouter.patch(
+  "/:userId",
+  requireUser,
+  requireActiveUser,
+  async (req, res, next) => {
+    try {
+      const user = await getUserById(req.params.userId);
+      if (user && user.id === req.user.id) {
+        const updatedUser = await updateUser(user.id, { active: true });
 
-  try {
-   if(userId){
-    userId.active = true 
-   }
-  } catch ({ name, message }) {
-    next({ name, message });
-  }
-});
-
-usersRouter.delete("/:userId", requireUser, requireActiveUser, async (req, res, next) => {
-  try {
-    const user = await getUserById(req.params.userId);
-    if (user && user.id === req.user.id) {
-      const updatedUser = await updateUser(user.id, { active: false });
-
-      res.send({ user: updatedUser });
-    } else {
-      next(
-        user
-          ? {
-              name: "UnauthorizedUserError",
-              message: "You cannot delete a user that is not yours",
-            }
-          : {
-              name: "UserNotFoundError",
-              message: "That user does not exist",
-            }
-      );
+        res.send({ user: updatedUser });
+      } else {
+        next(
+          user
+            ? {
+                name: "UnauthorizedUserError",
+                message: "You cannot delete a user that is not yours",
+              }
+            : {
+                name: "UserNotFoundError",
+                message: "That user does not exist",
+              }
+        );
+      }
+    } catch ({ name, message }) {
+      next({ name, message });
     }
-  } catch ({ name, message }) {
-    next({ name, message });
   }
-});
+);
+
+usersRouter.delete(
+  "/:userId",
+  requireUser,
+  requireActiveUser,
+  async (req, res, next) => {
+    try {
+      const user = await getUserById(req.params.userId);
+      if (user && user.id === req.user.id) {
+        const updatedUser = await updateUser(user.id, { active: false });
+
+        res.send({ user: updatedUser });
+      } else {
+        next(
+          user
+            ? {
+                name: "UnauthorizedUserError",
+                message: "You cannot delete a user that is not yours",
+              }
+            : {
+                name: "UserNotFoundError",
+                message: "That user does not exist",
+              }
+        );
+      }
+    } catch ({ name, message }) {
+      next({ name, message });
+    }
+  }
+);
 
 usersRouter.post("/register", async (req, res, next) => {
   const { username, password, name, location } = req.body;
