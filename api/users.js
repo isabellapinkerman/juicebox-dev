@@ -12,8 +12,8 @@ const {
   updateUser,
 } = require("../db");
 
-console.log();
-requireActiveUser();
+// console.log();
+// requireActiveUser();
 usersRouter.use((req, res, next) => {
   console.log("A request is being made to /users");
 
@@ -57,10 +57,22 @@ usersRouter.post("/login", async (req, res, next) => {
   }
 });
 
-usersRouter.delete("/:userId", requireUser, async (req, res, next) => {
+usersRouter.patch("/:userId", requireUser, async (req, res, next) => {
+  const { userId } = req.params;
+  console.log(req)
+
+  try {
+   if(userId){
+    userId.active = true 
+   }
+  } catch ({ name, message }) {
+    next({ name, message });
+  }
+});
+
+usersRouter.delete("/:userId", requireUser, requireActiveUser, async (req, res, next) => {
   try {
     const user = await getUserById(req.params.userId);
-
     if (user && user.id === req.user.id) {
       const updatedUser = await updateUser(user.id, { active: false });
 

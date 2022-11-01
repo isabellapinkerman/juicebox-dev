@@ -1,4 +1,5 @@
 function requireUser(req, res, next) {
+  console.log(req)
   if (!req.user) {
     next({
       name: "MissingUserError",
@@ -10,7 +11,6 @@ function requireUser(req, res, next) {
 }
 
 function requireActiveUser(req, res, next) {
-  console.log(req, "AHHHHH");
   if (!req.user && req.active === false) {
     next({
       name: "MissingActiveUserError",
